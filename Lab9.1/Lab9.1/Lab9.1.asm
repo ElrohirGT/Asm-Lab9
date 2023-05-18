@@ -13,16 +13,19 @@ includelib legacy_stdio_definitions.lib
 .model flat, C
 
 printf proto c : vararg
-extrn scanf:near
+scanf proto c : vararg
+;extrn scanf:near
 
 .data
 
-	; AÑOS
 	DC2022 byte "2022",0
-	DC2023 byte "2023",0
 	
 	; MESES
-	; 2022
+	enero byte "Enero",0
+	febrero byte "Febrero",0
+	marzo byte "Marzo",0
+	abril byte "Abril",0
+	mayo byte "Mayo",0
 	junio byte "Junio",0 
 	julio byte "Julio",0
 	agosto byte "Agosto",0
@@ -31,14 +34,6 @@ extrn scanf:near
 	noviembre byte "Noviembre",0
 	diciembre byte "Diciembre",0
 	
-	; 2023
-	enero byte "Enero",0
-	febrero byte "Febrero",0
-	marzo byte "Marzo",0
-	abril byte "Abril",0
-	mayo byte "Mayo",0
-
-
 	; CLIENTES
 	marta byte "Marta", 0
 	daniel byte "Daniel", 0
@@ -48,17 +43,19 @@ extrn scanf:near
 	nits dword 9488634, 2802904, 9731927, 9488634, 2802904, 9731927, 9488634, 2802904, 9731927, 9488634, 2802904, 9731927
 	
 	; MONTOS
-	montos dword 15000, 2345, 32000, 100000, 50000, 780000, 500000, 856000, 456000, 20000, 167000, 670000
+	montos dword 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	askMontoFormat byte "Monto factura %d: ",0
+	montoScannFormat byte "%d",0
 	
-	; ISR
-	isrs dword 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	; IVAs
+	ivas dword 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	
 	montoAnual dword 0
 	limiteISR dword 150000
 	i dword 0
 
 	; TABLE
-	tHeader byte "|    ANO     |    MES     |   NOMBRE   |    NIT     |    MONTO   |    ISR     |",0Ah,0
+	tHeader byte "|    ANO     |    MES     |   NOMBRE   |    NIT     |    MONTO   |    IVA     |",0Ah,0
 	tDivider byte "-------------------------------------------------------------------------------",0Ah,0
 	trfStrings byte "| %-10s | %-10s | %-10s |",0
 	tNumberFormat byte " %10d |",0
@@ -66,21 +63,24 @@ extrn scanf:near
 	
 	newLine byte 0Ah,0
 
-	montoMessageFormat byte "El monto del ISR es: %d.",0Ah, 0
-	invalidRegimenMessage byte "Regimen invalido, por favor cambiarse a mediano contribuyente",0Ah,0
+	montoMessageFormat byte "El IVA asciende a: %d.",0Ah, 0
+	invalidRegimenMessage byte "Regimen invalido, por favor cambiarse a IVA general",0Ah,0
 	validRegimenMessage byte "Regimen valido, puede continuar como pequeno contribuyente",0Ah,0
 	endMessage byte "Feliz dia",0
 
 .code
 	main proc
-		invoke printf, addr tHeader
-		invoke printf, addr tDivider
 
 	loopIsr:
 		mov esi, offset montos; esi = montos
-		mov edi, offset isrs; edi = isrs
+		mov edi, offset ivas; edi = isrs
+		inc i
+		invoke printf, addr askMontoFormat, i 
+		dec i
+
 		mov ebx, i
-		imul ebx, 4; 32 is the size of dword
+		imul ebx, 4; 4x8 is the size of dword
+		invoke scanf, addr montoScannFormat, addr [esi + ebx]
 		mov eax, [esi + ebx]; eax = ith element in montos
 
 		; eax * 5% for ISR
@@ -98,6 +98,10 @@ extrn scanf:near
 		inc i
 		cmp i, 12
 		jl loopIsr
+
+		;Print table title
+		invoke printf, addr tHeader
+		invoke printf, addr tDivider
 
 		; Reset the counter
 		mov i, 0	
@@ -152,7 +156,7 @@ extrn scanf:near
 			mov tcellValue, eax
 			call printInnerCell
 
-			mov eax, offset isrs
+			mov eax, offset ivas
 			mov eax, [eax + ebx]
 			mov tcellValue, eax
 			call printInnerCell
@@ -211,23 +215,23 @@ extrn scanf:near
 		jmp printNumberValues
 	
 	factura8:
-		invoke printf, addr trfStrings, addr DC2023, addr enero, addr daniel
+		invoke printf, addr trfStrings, addr DC2022, addr enero, addr daniel
 		jmp printNumberValues
 	
 	factura9:
-		invoke printf, addr trfStrings, addr DC2023, addr febrero, addr marco
+		invoke printf, addr trfStrings, addr DC2022, addr febrero, addr marco
 		jmp printNumberValues
 	
 	factura10:
-		invoke printf, addr trfStrings, addr DC2023, addr marzo, addr marta
+		invoke printf, addr trfStrings, addr DC2022, addr marzo, addr marta
 		jmp printNumberValues
 	
 	factura11:
-		invoke printf, addr trfStrings, addr DC2023, addr abril, addr daniel
+		invoke printf, addr trfStrings, addr DC2022, addr abril, addr daniel
 		jmp printNumberValues
 	
 	factura12:
-		invoke printf, addr trfStrings, addr DC2023, addr mayo, addr marco
+		invoke printf, addr trfStrings, addr DC2022, addr mayo, addr marco
 		jmp printNumberValues	
 	
 	printInnerCell:
